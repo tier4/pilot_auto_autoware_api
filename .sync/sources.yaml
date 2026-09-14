@@ -1,0 +1,73 @@
+# Declarative description of every mirror this repository publishes.
+#
+# This file is the single source of truth. tools/mirror.py derives the
+# git-filter-repo invocation, the commit-message rewriting, the per-source
+# mirror branches and the combined branches from it; nothing about the mapping
+# is hard-coded in the workflow.
+#
+# The paths below reproduce what the previous mirror-*.yaml workflows filtered,
+# so this change makes the pipeline configuration-driven without moving any
+# package between repositories.
+#
+# Determinism contract
+# --------------------
+# Per-source mirrors are pure functions of (upstream commit, this file):
+#
+#   git-filter-repo rewrites each upstream history. Same input plus same
+#   arguments always yields the same commit ids, so those branches publish as
+#   fast-forwards. A failed push means reproducibility was lost.
+#
+# The combined branch is the pure function f(published tip, member tips):
+#
+#   Member commits not yet reflected in the published tip are replayed on top
+#   of it. Resume position is recovered from the tip tree (renamed subtree
+#   oids). Same tip plus same members always yield the same commit ids, so the
+#   push is a fast-forward (or a no-op). --verify checks both the tip tree
+#   against the member tips and that a second build reproduces the commit id.
+
+version: 1
+
+sources:
+  autoware_universe:
+    upstream: https://github.com/autowarefoundation/autoware_universe.git
+    ref: main
+    # Flat name kept: awf-latest/universe cannot coexist with the existing
+    # awf-latest branch, and deleting it is refused by the organisation rulesets.
+    mirror_branch: awf-latest
+    paths:
+      - path: system/autoware_default_adapi_helpers/
+      - path: system/autoware_default_adapi_universe/
+      - path: .github/
+      - path: docs/
+      - regex: ^[^/]*$ # root-level files (LICENSE, NOTICE, ...)
+    message_rules:
+      - pattern: '#(\d+)'
+        replacement: autowarefoundation/autoware_universe#\1
+
+  autoware_core:
+    upstream: https://github.com/autowarefoundation/autoware_core.git
+    ref: main
+    mirror_branch: awf-core-latest
+    paths:
+      - path: api/
+    message_rules:
+      - pattern: '#(\d+)'
+        replacement: autowarefoundation/autoware_core#\1
+
+combined:
+  awf-combined-latest:
+    # Pending member commits are appended onto the published tip, ordered by
+    # committer date among themselves. Ties break on member order then original
+    # commit id. The result is a deterministic function of (published tip,
+    # member tips) and always fast-forwards.
+    order_by: committer_date
+    # Each member is filed under the name of its upstream, which keeps the two
+    # histories from sharing a directory and makes provenance visible in the
+    # path. Everything else at the root comes from autoware_universe.
+    members:
+      - source: autoware_universe
+        rename:
+          system: universe/system
+      - source: autoware_core
+        rename:
+          api: core/api
