@@ -32,7 +32,8 @@ std::array<double, 36> get_covariance_parameter(
 }
 
 InitialPoseAdaptor::InitialPoseAdaptor(const rclcpp::NodeOptions & options)
-: autoware::agnocast_wrapper::Node("autoware_initial_pose_adaptor", options), fitter_(this)
+: autoware::agnocast_wrapper::Node("autoware_initial_pose_adaptor", options),
+  fitter_(this->get_rclcpp_node().get())
 {
   rviz_particle_covariance_ = get_covariance_parameter(this, "initial_pose_particle_covariance");
   sub_initial_pose_ = create_subscription<PoseWithCovarianceStamped>(
