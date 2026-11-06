@@ -68,6 +68,7 @@ combined:
     members:
       - source: autoware_universe
         rename:
+          system: universe/system
           api: universe/api
       - source: autoware_core
         rename:
