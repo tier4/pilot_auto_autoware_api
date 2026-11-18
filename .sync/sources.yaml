@@ -37,6 +37,7 @@ sources:
     paths:
       - path: system/autoware_default_adapi_helpers/
       - path: system/autoware_default_adapi_universe/
+      - path: api/
       - path: .github/
       - path: docs/
       - regex: ^[^/]*$ # root-level files (LICENSE, NOTICE, ...)
@@ -68,6 +69,7 @@ combined:
       - source: autoware_universe
         rename:
           system: universe/system
+          api: universe/api
       - source: autoware_core
         rename:
           api: core/api
